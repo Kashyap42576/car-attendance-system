@@ -6,18 +6,14 @@ from datetime import datetime
 app = Flask(__name__)
 
 # --- Google Sheets Setup ---
-# Define the scope of access
 scope = ["https://spreadsheets.google.com/feeds", 
          "https://www.googleapis.com/auth/spreadsheets",
          "https://www.googleapis.com/auth/drive.file", 
          "https://www.googleapis.com/auth/drive"]
 
-# Authenticate using your downloaded JSON key
 creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
 client = gspread.authorize(creds)
 
-# Open the specific Google Sheet by its exact name
-# Make sure the Service Account email is shared as an Editor on this sheet!
 sheet = client.open("Vehicle Scan Logs").sheet1 
 # ---------------------------
 
@@ -34,11 +30,9 @@ def log_scan():
     lng = data.get('lng')
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    # Prepare the row of data
     new_row = [current_time, driver_id, car_id, lat, lng]
 
     try:
-        # Append the row to the Google Sheet
         sheet.append_row(new_row)
         print(f"Logged to Sheets: Driver {driver_id} in Car {car_id}")
         return jsonify({"status": "success", "message": "Attendance marked in Google Sheets!"})

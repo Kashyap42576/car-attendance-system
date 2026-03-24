@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Transport Department</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #f7f9fc; 
+            margin: 0; 
+            padding: 0;
+        }
+
+        /* --- THE TOP HEADER (Matching the Driver UI) --- */
+        .top-banner {
+            width: 100%;
+            background-color: #34495e; 
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+            border-bottom: 3px solid #f1c40f; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .logo-group { display: flex; align-items: center; }
+        .parul-logo { height: 45px; margin-right: 15px; background-color: white; border-radius: 4px; padding: 2px;}
+        .system-title { margin: 0; font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        .logout-btn { background-color: #e74c3c; color: white; text-decoration: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; font-size: 14px; }
+        .logout-btn:hover { background-color: #c0392b; }
+
+        /* --- DASHBOARD CONTAINER & CONTROLS --- */
+        .container {
+            padding: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        h2 { color: #2c3e50; margin: 0; font-size: 24px; }
+        
+        .search-box {
+            padding: 10px 15px;
+            width: 300px;
+            border-radius: 5px;
+            border: 1px solid #bdc3c7;
+            font-size: 16px;
+            outline: none;
+        }
+        .search-box:focus { border-color: #3498db; }
+
+        /* --- TABLE STYLING --- */
+        .table-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            overflow-x: auto;
+            border: 1px solid #e1e8ed;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid #e1e8ed;
+        }
+        th {
+            background-color: #ecf0f1;
+            font-weight: 700;
+            color: #34495e;
+            text-transform: uppercase;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+        tr:hover { background-color: #f8fafc; }
+        td { color: #2c3e50; font-size: 15px; }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-banner">
+        <div class="logo-group">
+            <img src="https://www.freelogovectors.net/wp-content/uploads/2022/03/parul-university-logo_freelogovectors.net_.png" alt="Parul University" class="parul-logo">
+            <h1 class="system-title">Admin Dashboard</h1>
+        </div>
+        <a href="/logout" class="logout-btn">Logout</a>
+    </div>
+
+    <div class="container">
+        
+        <div class="controls">
+            <h2>Vehicle Scan Logs</h2>
+            <input type="text" id="searchInput" class="search-box" placeholder="Search ID, Name, or Car..." onkeyup="filterTable()">
+        </div>
+
+        <div class="table-container">
+            <table id="logTable">
+                <thead>
+                    <tr>
+                        {% for header in headers %}
+                            <th>{{ header }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in data %}
+                        <tr>
+                            {% for cell in row %}
+                                <td>{{ cell }}</td>
+                            {% endfor %}
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="empty-state">No vehicle scans recorded yet. Wait for a driver to scan a car!</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function filterTable() {
+            let input = document.getElementById("searchInput");
+            let filter = input.value.toUpperCase();
+            let table = document.getElementById("logTable");
+            let tr = table.getElementsByTagName("tr");
+
+            // Loop through all table rows, and hide those who don't match the search query
+            for (let i = 1; i < tr.length; i++) { // Start at 1 to skip the header row
+                let rowText = tr[i].innerText;
+                if (rowText) {
+                    if (rowText.toUpperCase().indexOf(filter) > -1) {
+                        tr[i].style.display = "";
+                    } else {
+                        tr[i].style.display = "none";
+                    }
+                }       
+            }
+        }
+    </script>
+</body>
+</html>

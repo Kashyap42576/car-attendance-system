@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Scanner</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+        #reader { width: 100%; max-width: 400px; margin: 0 auto; }
+        input { padding: 10px; margin-bottom: 20px; width: 80%; max-width: 300px; }
+    </style>
+</head>
+<body>
+
+    <h2>Car Attendance System</h2>
+    
+    <input type="text" id="driverId" placeholder="Enter Driver ID" required>
+    
+    <div id="reader"></div>
+    <p id="status">Waiting for scan...</p>
+
+    <script>
+        // Initialize the QR Scanner
+        const html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+
+        function onScanSuccess(decodedText, decodedResult) {
+            const driverId = document.getElementById('driverId').value;
+            
+            if (!driverId) {
+                alert("Please enter your Driver ID first!");
+                return;
+            }
+
+            // Stop scanning once a code is found
+            html5QrcodeScanner.clear();
+            document.getElementById('status').innerText = "QR Found: " + decodedText + ". Getting Location...";
+
+            // Get GPS Location
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => sendData(driverId, decodedText, position.coords.latitude, position.coords.longitude),
+                    (error) => alert("Error getting location. Please enable GPS.")
+                );
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        }
+
+        function sendData(driverId, carId, lat, lng) {
+            // Send the data to the Python Backend
+            fetch('/log_scan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    driver_id: driverId,
+                    car_id: carId,
+                    lat: lat,
+                    lng: lng
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('status').innerText = data.message;
+                alert("Success! " + data.message);
+                // Optional: reload page for next scan
+                // window.location.reload(); 
+            })
+            .catch((error) => console.error('Error:', error));
+        }
+
+        // Start the scanner
+        html5QrcodeScanner.render(onScanSuccess);
+    </script>
+</body>
+</html>

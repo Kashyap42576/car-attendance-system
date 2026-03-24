@@ -3,73 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Driver Scanner</title>
+    <title>Driver Dashboard - Car Attendance System</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-        #reader { width: 100%; max-width: 400px; margin: 0 auto; }
-        input { padding: 10px; margin-bottom: 20px; width: 80%; max-width: 300px; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #f7f9fc; 
+            margin: 0; 
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* --- THE TOP HEADER --- */
+        .top-banner {
+            width: 100%;
+            background-color: #34495e; 
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+            border-bottom: 3px solid #f1c40f; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .logo-group { display: flex; align-items: center; }
+        
+        /* Styled the logo to fit perfectly in the banner */
+        .parul-logo { height: 45px; margin-right: 15px; background-color: white; border-radius: 4px; padding: 2px;}
+        
+        .system-title { margin: 0; font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        .logout-btn { background-color: #e74c3c; color: white; text-decoration: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; font-size: 14px; }
+        .logout-btn:hover { background-color: #c0392b; }
+
+        /* --- THE DYNAMIC DRIVER CARD --- */
+        .main-card {
+            background-color: white;
+            width: 90%;
+            max-width: 450px;
+            margin-top: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            padding: 25px;
+            box-sizing: border-box;
+            border: 2px solid #ddd;
+        }
+
+        .large-text-group { margin-bottom: 25px; text-align: center; }
+        .card-name { font-size: 42px; color: #4b6584; font-weight: 800; margin: 0; text-transform: capitalize; } 
+        .card-id-dark { font-size: 32px; color: #2c3e50; font-weight: 800; margin: 10px 0; letter-spacing: 2px; } 
+        .card-status { font-size: 18px; color: #3498db; font-weight: 700; margin: 0; text-transform: uppercase; letter-spacing: 1px;}
+
+        /* --- THE SCANNER AND BUTTON STYLING --- */
+        #reader { 
+            width: 100%; 
+            border: 2px solid #e1e8ed !important; 
+            border-radius: 10px; 
+            background: white; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        
+        #reader button {
+            background-color: #f1c40f !important; 
+            color: #2c3e50 !important; 
+            font-size: 18px !important;
+            font-weight: 800 !important;
+            padding: 12px 25px !important;
+            border-radius: 30px !important; 
+            border: none !important;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-top: 10px;
+        }
+        #reader button:hover { background-color: #e1b10b !important; }
+        
+        #status { 
+            margin-top: 25px; 
+            font-weight: bold; 
+            font-size: 16px; 
+            color: #7f8c8d; 
+            text-align: center;
+        }
     </style>
 </head>
 <body>
 
-    <h2>Car Attendance System</h2>
-    
-    <input type="text" id="driverId" placeholder="Enter Driver ID" required>
-    
-    <div id="reader"></div>
-    <p id="status">Waiting for scan...</p>
+    <div class="top-banner">
+        <div class="logo-group">
+            <img src="https://www.freelogovectors.net/wp-content/uploads/2022/03/parul-university-logo_freelogovectors.net_.png" alt="Parul University" class="parul-logo">
+            <h1 class="system-title">Transport<br>Department</h1>
+        </div>
+        <a href="/logout" class="logout-btn">Logout</a>
+    </div>
+
+    <div class="main-card">
+        <div class="large-text-group">
+            <p class="card-name">{{ driver_name }}</p> 
+            <p class="card-id-dark">{{ driver_id }}</p> 
+            <p class="card-status" id="car-status-text">Scanner Active</p>
+        </div>
+        
+        <div id="reader"></div>
+        <p id="status">Ready to scan vehicle QR code...</p>
+    </div>
 
     <script>
-        // Initialize the QR Scanner
-        const html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+        const sessionDriverId = "{{ driver_id }}";
+        
+        const html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
+            fps: 10, 
+            qrbox: 250,
+            supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA] 
+        });
 
         function onScanSuccess(decodedText, decodedResult) {
-            const driverId = document.getElementById('driverId').value;
-            
-            if (!driverId) {
-                alert("Please enter your Driver ID first!");
-                return;
-            }
-
-            // Stop scanning once a code is found
             html5QrcodeScanner.clear();
-            document.getElementById('status').innerText = "QR Found: " + decodedText + ". Getting Location...";
+            document.getElementById('status').innerText = "Location securely captured.";
+            document.getElementById('car-status-text').innerText = "Scanned: " + decodedText; 
+            document.getElementById('car-status-text').style.color = "#2ecc71"; 
 
-            // Get GPS Location
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
-                    (position) => sendData(driverId, decodedText, position.coords.latitude, position.coords.longitude),
-                    (error) => alert("Error getting location. Please enable GPS.")
+                    (position) => sendData(sessionDriverId, decodedText, position.coords.latitude, position.coords.longitude),
+                    (error) => alert("Error getting location. Please enable GPS on your device.")
                 );
             } else {
-                alert("Geolocation is not supported by this browser.");
+                alert("Geolocation is not supported by your browser.");
             }
         }
 
         function sendData(driverId, carId, lat, lng) {
-            // Send the data to the Python Backend
             fetch('/log_scan', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    driver_id: driverId,
-                    car_id: carId,
-                    lat: lat,
-                    lng: lng
-                })
+                body: JSON.stringify({ driver_id: driverId, car_id: carId, lat: lat, lng: lng })
             })
             .then(response => response.json())
             .then(data => {
-                document.getElementById('status').innerText = data.message;
-                alert("Success! " + data.message);
-                // Optional: reload page for next scan
-                // window.location.reload(); 
+                document.getElementById('status').innerText = "✅ " + data.message;
+                document.getElementById('status').style.color = "#2ecc71";
+                
+                // Automatically reload the page after 2.5 seconds for the next scan
+                setTimeout(() => window.location.reload(), 2500);
             })
             .catch((error) => console.error('Error:', error));
         }
 
-        // Start the scanner
         html5QrcodeScanner.render(onScanSuccess);
     </script>
 </body>

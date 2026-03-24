@@ -11,21 +11,24 @@ scope = ["https://spreadsheets.google.com/feeds",
          "https://www.googleapis.com/auth/drive.file", 
          "https://www.googleapis.com/auth/drive"]
 
+# Authenticate using your downloaded JSON key
 creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
 client = gspread.authorize(creds)
 
 # Open the main spreadsheet
 spreadsheet = client.open("Vehicle Scan Logs")
 
-# Connect to the specific tabs
+# Connect to the specific tabs (Make sure these exact names match your Google Sheet!)
 log_sheet = spreadsheet.worksheet("Logs")
 cred_sheet = spreadsheet.worksheet("Credentials")
 # ---------------------------
 
+# 1. Route for the Main Scanner App
 @app.route('/')
 def index():
     return render_template('index.html')
 
+# 2. Route to Handle the Data from the Phone
 @app.route('/log_scan', methods=['POST'])
 def log_scan():
     data = request.json
@@ -37,7 +40,6 @@ def log_scan():
 
     try:
         # SECURITY CHECK: Get all allowed IDs from Column A of the Credentials tab
-        # (This pulls a list of everything in the first column)
         allowed_drivers = cred_sheet.col_values(1)
 
         # If the driver ID is NOT in the list, reject the scan
@@ -56,5 +58,31 @@ def log_scan():
         print(f"Error: {e}")
         return jsonify({"status": "error", "message": "Failed to sync with the server."})
 
+# 3. Route for the Admin Dashboard
+@app.route('/admin')
+def admin_dashboard():
+    try:
+        # Fetch all rows from the Logs tab
+        all_records = log_sheet.get_all_values()
+        
+        # If the sheet is completely empty, handle it gracefully
+        if not all_records:
+            return render_template('admin.html', headers=[], data=[])
+            
+        # The first row contains the headers (Timestamp, Driver ID, etc.)
+        headers = all_records[0]
+        # Everything from the second row onwards is the actual scan data
+        data = all_records[1:]
+        
+        # Reverse the data so the newest scans appear at the top!
+        data.reverse()
+
+        return render_template('admin.html', headers=headers, data=data)
+        
+    except Exception as e:
+        print(f"Dashboard Error: {e}")
+        return f"<h3>Error loading dashboard. Check the server terminal for details.</h3>"
+
 if __name__ == '__main__':
+    # host='0.0.0.0' allows mobile devices on the same network to connect
     app.run(debug=True, host='0.0.0.0', port=5000)

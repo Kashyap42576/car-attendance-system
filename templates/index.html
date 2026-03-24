@@ -6,7 +6,7 @@
     <title>Driver ID - Transport Department</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        /* Exact layout and color matching from the photo */
+        /* Exact layout and color matching from your photo */
         body {
             margin: 0;
             padding: 15px;
@@ -26,7 +26,7 @@
             box-sizing: border-box;
             position: relative;
         }
-        /* Small logout button tucked in the corner so it doesn't ruin the design */
+        /* Small logout button tucked in the corner */
         .logout-btn {
             position: absolute;
             top: 10px;
@@ -38,6 +38,7 @@
             border-radius: 5px;
             font-weight: bold;
             font-size: 12px;
+            z-index: 10;
         }
         .logo-container img {
             width: 250px;
@@ -81,6 +82,10 @@
             cursor: pointer;
             margin-top: auto; /* Pushes button perfectly to the bottom */
             margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .scan-btn:active {
+            transform: scale(0.98);
         }
         #reader-container {
             width: 100%;
@@ -112,15 +117,16 @@
     
     <div id="reader-container">
         <div id="reader"></div>
-        <p id="status">Connecting to rear camera...</p>
+        <p id="status">Connecting to camera...</p>
     </div>
 </div>
 
 <script>
+    // Grab the dynamic data passed from Python
     const sessionDriverId = "{{ driver_id }}";
     const sessionDriverName = "{{ driver_name }}";
     
-    // Split the name into parts to stack them vertically exactly like the photo
+    // Split the name to stack vertically exactly like the photo
     const nameContainer = document.getElementById('dynamic-name');
     const nameParts = sessionDriverName.split(' ');
     nameParts.forEach(part => {
@@ -130,42 +136,54 @@
         nameContainer.appendChild(p);
     });
 
-    // Use the raw HTML5QrCode API instead of the Scanner wrapper
     let html5QrCode;
 
     function startScanner() {
-        // Hide the yellow button and reveal the camera box
+        // 1. Trigger the GPS permission popup IMMEDIATELY when the button is clicked
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => { console.log("GPS Permission Granted."); }, 
+                (error) => { alert("Warning: GPS permission is required to log cars!"); } 
+            );
+        } else {
+            alert("Geolocation is not supported by your browser.");
+        }
+
+        // 2. Hide the button and show the camera box
         document.getElementById('start-scan-btn').style.display = 'none';
         document.getElementById('reader-container').style.display = 'block';
 
         html5QrCode = new Html5Qrcode("reader");
         
-        // This is the command that forces the REAR camera immediately
+        // 3. Force open the rear camera
         html5QrCode.start(
             { facingMode: "environment" }, 
             { fps: 10, qrbox: { width: 250, height: 250 } }, 
             onScanSuccess
         ).catch((err) => {
-            document.getElementById('status').innerText = "Error accessing rear camera. Please check permissions.";
+            document.getElementById('status').innerText = "Error accessing rear camera. Check permissions.";
             console.error(err);
         });
     }
 
     function onScanSuccess(decodedText, decodedResult) {
-        // Stop the camera instantly upon reading the QR
+        // Stop the camera the instant it reads a code
         html5QrCode.stop().then(() => {
             document.getElementById('reader').style.display = 'none';
             document.getElementById('status').innerText = "Securing GPS Location...";
             document.getElementById('status').style.color = "#586eef";
 
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => sendData(sessionDriverId, decodedText, position.coords.latitude, position.coords.longitude),
-                    (error) => alert("Error getting location. Please enable GPS.")
-                );
-            } else {
-                alert("Geolocation is not supported by your browser.");
-            }
+            // Grab the exact coordinates and send to Python
+            navigator.geolocation.getCurrentPosition(
+                (position) => sendData(sessionDriverId, decodedText, position.coords.latitude, position.coords.longitude),
+                (error) => {
+                    document.getElementById('status').innerText = "Failed: GPS Denied.";
+                    document.getElementById('status').style.color = "#e74c3c";
+                    alert("We need your location to log this scan! Please enable GPS.");
+                    // Show the scan button again so they can retry
+                    setTimeout(() => window.location.reload(), 2000);
+                }
+            );
         }).catch(err => console.error("Failed to stop scanner.", err));
     }
 
@@ -180,7 +198,7 @@
             document.getElementById('status').innerText = "✅ " + data.message;
             document.getElementById('status').style.color = "#2ecc71";
             
-            // Reload back to the ID card view
+            // Reload back to the pristine ID card view after 2 seconds
             setTimeout(() => window.location.reload(), 2000);
         })
         .catch((error) => console.error('Error:', error));

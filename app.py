@@ -91,7 +91,7 @@ def admin_login():
         entered_pin = request.form.get('pin')
         
         # Change this PIN to whatever you want for the workshop
-        if entered_pin == "1234":
+        if entered_pin == "ParulTrans1234":
             session['admin_logged_in'] = True
             return redirect(url_for('admin_dashboard'))
         else:

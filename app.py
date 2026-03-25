@@ -26,7 +26,7 @@ cred_sheet = spreadsheet.worksheet("Credentials")
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        entered_id = request.form.get('driver_id')
+        entered_id = request.form.get('MIS')
         
         # Pull ALL credentials (rows) from the Credentials sheet
         all_credentials = cred_sheet.get_all_records()
@@ -35,15 +35,15 @@ def login():
         driver_found = False
         driver_name = ""
         for row in all_credentials:
-            if str(row['Driver ID']) == entered_id:
+            if str(row['MIS']) == entered_id:
                 driver_found = True
-                driver_name = row['Driver Name']
+                driver_name = row['Name']
                 break
 
         if driver_found:
             # Successfully logged in: store both ID and Name in the session
-            session['driver_id'] = entered_id
-            session['driver_name'] = driver_name
+            session['MIS'] = entered_id
+            session['Name'] = driver_name
             return redirect(url_for('scanner'))
         else:
             return render_template('driver_login.html', error="Invalid ID. Access Denied.")
@@ -54,11 +54,11 @@ def login():
 @app.route('/')
 def scanner():
     # SECURITY CHECK: Do they have the driver session active?
-    if 'driver_id' not in session or 'driver_name' not in session:
+    if 'MIS' not in session or 'Name' not in session:
         return redirect(url_for('login')) # Kick them to the login page
         
     # Pass BOTH dynamic pieces of data to the stylish new UI
-    return render_template('index.html', driver_id=session['driver_id'], driver_name=session['driver_name'])
+    return render_template('index.html', driver_id=session['MIS'], driver_name=session['Name'])
 
 # --- 3. HANDLE THE SCAN DATA ---
 @app.route('/log_scan', methods=['POST'])
@@ -79,7 +79,7 @@ def log_scan():
     try:
         new_row = [current_time, driver_id, car_id, lat, lng]
         log_sheet.append_row(new_row)
-        print(f"Logged: {driver_id} scanned {car_id} at {current_time}")
+        print(f"Logged: {MIS} scanned {car_id} at {current_time}")
         return jsonify({"status": "success", "message": "Attendance marked!"})
     except Exception as e:
         return jsonify({"status": "error", "message": "Failed to sync."}), 500

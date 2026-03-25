@@ -44,6 +44,7 @@
     const sessionStaffId = "{{ staff_id }}";
     const sessionStaffName = "{{ staff_name }}";
     
+    // Stack the name vertically
     const nameContainer = document.getElementById('dynamic-name');
     const nameParts = sessionStaffName.split(' ');
     nameParts.forEach(part => {
@@ -85,7 +86,7 @@
             navigator.geolocation.getCurrentPosition(
                 (position) => sendData(sessionStaffId, decodedText, position.coords.latitude, position.coords.longitude),
                 (error) => {
-                    document.getElementById('status').innerText = "Failed: GPS Denied.";
+                    document.getElementById('status').innerText = "❌ Failed: GPS Denied.";
                     document.getElementById('status').style.color = "#e74c3c";
                     alert("We need your location to log attendance!");
                     setTimeout(() => window.location.reload(), 2000);
@@ -102,9 +103,17 @@
         })
         .then(response => response.json())
         .then(data => {
-            document.getElementById('status').innerText = "✅ " + data.message;
-            document.getElementById('status').style.color = "#2ecc71";
-            setTimeout(() => window.location.reload(), 2000);
+            // THE FIX: Only show green if Python says it was a success
+            if (data.status === "success") {
+                document.getElementById('status').innerText = "✅ " + data.message;
+                document.getElementById('status').style.color = "#2ecc71"; // Green
+                setTimeout(() => window.location.reload(), 2000);
+            } else {
+                document.getElementById('status').innerText = "❌ " + data.message;
+                document.getElementById('status').style.color = "#e74c3c"; // Red
+                // Wait 4 seconds so you can actually read the error message!
+                setTimeout(() => window.location.reload(), 4000); 
+            }
         })
         .catch((error) => console.error('Error:', error));
     }
